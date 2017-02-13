@@ -22,17 +22,18 @@ const date = moment().format("YYYY-MM-DD");
 try {
     fs.accessSync("./data");
     console.log("This file already exist.");
-    
+
 } catch (e) {
     console.log("Data folder doesn't exists");
     fs.mkdirSync("./data");
-    const csvStream = fastcsv.createWriteStream({headers: true})
-    const writableStream = fs.createWriteStream('./data/' + date + '.csv');
+
 }
 
+let csvStream = fastcsv.createWriteStream({headers: true})
+let writableStream = fs.createWriteStream('./data/' + date + '.csv');
 
 
-
+csvStream.pipe(writableStream);
 
 
 
@@ -62,9 +63,65 @@ getShirtURL.then(function(body){
   urlArray.join(', ');
   console.log(urlArray);
   return urlArray;
+}).then(function scrapeShirtInformation(url){
+  url.forEach(function(url){
+    new Promise(function(resolve, reject){
+      request(url, function (error, response, body) {
+        if (!error) {
+          const $ = cheerio.load(body);
+
+          let price = $('.price').text();
+          let title = $(".shirt-details h1").text().substr(price.length + 1);
+          let relativeImageUrl = $(".shirt-picture img").attr("src");
+          let imageUrl = rootURL + relativeImageUrl;
+
+          csvStream.write({
+            Title: title,
+            Price:  price,
+            ImageURL: imageUrl,
+            //URL: url,
+          })
+            resolve(console.log('Success!'));
+
+        } else {
+            reject(console.log('FAIL!'));
+            console.log(`An error was encountered: ${error.message}`);
+        }
+      });
+    });
+
+  })
+
 });
 
 
+// function scrapeShirtInformation(url){
+//   request(url, function (error, response, body) {
+//     if (!error) {
+//       const $ = cheerio.load(body);
+//
+//       let price = $('.price').text();
+//       let title = $(".shirt-details h1").text().substr(price.length + 1);
+//       let relativeImageUrl = $(".shirt-picture img").attr("src");
+//       let imageUrl = rootURL + relativeImageUrl;
+//
+//       csvStream.write({
+//         Title: title,
+//         Price:  price,
+//         ImageURL: imageUrl,
+//         URL: url,
+//       })
+//
+//       writableStream.on("finish", () => {
+//         console.log("DONE!");
+//       });
+//
+//
+//     } else {
+//         console.log(`An error was encountered: ${error.message}`);
+//     }
+//   });
+// }
 
 // A Basic Promise Example / https://davidwalsh.name/promises
 //
