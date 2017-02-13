@@ -1,0 +1,32 @@
+{
+  "name": "nodejs-content-scraper",
+  "version": "1.0.0",
+  "description": "Project six for Treehouse Full Stack JavaScript Techdegree",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brandonleichty/Node.js-Content-Scraper.git"
+  },
+  "keywords": [
+    "content",
+    "scraper",
+    "node.js",
+    "javascript",
+    "scrape"
+  ],
+  "author": "Brandon Leichty",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/brandonleichty/Node.js-Content-Scraper/issues"
+  },
+  "homepage": "https://github.com/brandonleichty/Node.js-Content-Scraper#readme",
+  "dependencies": {
+    "cheerio": "^0.22.0",
+    "fast-csv": "^2.3.1",
+    "moment": "^2.17.1",
+    "request": "^2.79.0"
+  }
+}
