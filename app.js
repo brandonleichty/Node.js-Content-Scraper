@@ -11,7 +11,7 @@ const http = require('http');
 
 //URLs for the website shirts4mike.com
 const rootURL = 'http://shirts4mike.com/'
-const shirtURL = 'http://shirts4mike.com/shirts.php';
+const allShirtURL = 'http://shirts4mike.com/shirts.php';
 
 //Create new date with proper format using "moment" npm package
 const date = moment().format("YYYY-MM-DD");
@@ -21,17 +21,30 @@ const date = moment().format("YYYY-MM-DD");
 const getShirtURL = new Promise(function(resolve, reject) {
 
   //Checks to see if http://shirts4mike.com/shirts.php can be accessed
-  request(url, function (error, response, body) {
+  request(allShirtURL, function (error, response, body) {
     if (!error) {
       resolve(body);
+      console.log('Successfully connected to http://shirts4mike.com/shirts.php');
     } else {
       reject(error);
+      console.log('Could NOT connected to http://shirts4mike.com/shirts.php');
     }
-  }
+  })
 });
 //END of getShirtURL Promise
 
+getShirtURL.then(function(body){
+  const $ = cheerio.load(body);
+  const urlArray = [];
 
+  $('.products a').each(function(i, elem) {
+    urlArray[i] = rootURL + $(this).attr('href');
+  });
+
+  urlArray.join(', ');
+  console.log(urlArray);
+  return urlArray;
+});
 
 
 
