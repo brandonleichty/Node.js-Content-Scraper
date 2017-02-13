@@ -18,6 +18,24 @@ const date = moment().format("YYYY-MM-DD");
 
 
 
+
+try {
+    fs.accessSync("./data");
+    console.log("This file already exist.");
+    
+} catch (e) {
+    console.log("Data folder doesn't exists");
+    fs.mkdirSync("./data");
+    const csvStream = fastcsv.createWriteStream({headers: true})
+    const writableStream = fs.createWriteStream('./data/' + date + '.csv');
+}
+
+
+
+
+
+
+
 const getShirtURL = new Promise(function(resolve, reject) {
 
   //Checks to see if http://shirts4mike.com/shirts.php can be accessed
