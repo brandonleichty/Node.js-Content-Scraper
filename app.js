@@ -16,9 +16,6 @@ const allShirtURL = 'http://shirts4mike.com/shirts.php';
 //Create new date with proper format using "moment" npm package
 const date = moment().format("YYYY-MM-DD");
 
-
-
-
 try {
     fs.accessSync("./data");
     console.log("This file already exist.");
@@ -52,9 +49,12 @@ const getShirtURL = new Promise(function(resolve, reject) {
 });
 //END of getShirtURL Promise
 
+let urlArray = [];
+
+let actions;
+
 getShirtURL.then(function(body){
   const $ = cheerio.load(body);
-  const urlArray = [];
 
   $('.products a').each(function(i, elem) {
     urlArray[i] = rootURL + $(this).attr('href');
@@ -63,65 +63,55 @@ getShirtURL.then(function(body){
   urlArray.join(', ');
   console.log(urlArray);
   return urlArray;
-}).then(function scrapeShirtInformation(url){
-  url.forEach(function(url){
-    new Promise(function(resolve, reject){
+}).then(function(urlArray){
+  actions = urlArray.map(fn);
+});
+
+
+//Add all shirt objects into this object array--to then write to file
+let infoToWrite = [];
+
+let fn = function scrapeShirtInformation(url){
+  return new Promise((resolve, reject) => {
       request(url, function (error, response, body) {
         if (!error) {
+
           const $ = cheerio.load(body);
 
           let price = $('.price').text();
           let title = $(".shirt-details h1").text().substr(price.length + 1);
           let relativeImageUrl = $(".shirt-picture img").attr("src");
           let imageUrl = rootURL + relativeImageUrl;
+          console.log('Writing data for: ' + url);
 
-          csvStream.write({
-            Title: title,
-            Price:  price,
-            ImageURL: imageUrl,
-            //URL: url,
-          })
-            resolve(console.log('Success!'));
+          let shirtInfo = {};
+          shirtInfo.price = price;
+          shirtInfo.title = title;
+          shirtInfo.relativeImageUrl = relativeImageUrl;
+          shirtInfo.imageUrl = imageUrl;
 
+          //push shirt info into infoToWrite array
+          infoToWrite.push(shirtInfo);
+          console.log(infoToWrite);
+          resolve(shirtInfo);
         } else {
             reject(console.log('FAIL!'));
             console.log(`An error was encountered: ${error.message}`);
         }
       });
-    });
-
-  })
-
-});
 
 
-// function scrapeShirtInformation(url){
-//   request(url, function (error, response, body) {
-//     if (!error) {
-//       const $ = cheerio.load(body);
-//
-//       let price = $('.price').text();
-//       let title = $(".shirt-details h1").text().substr(price.length + 1);
-//       let relativeImageUrl = $(".shirt-picture img").attr("src");
-//       let imageUrl = rootURL + relativeImageUrl;
-//
-//       csvStream.write({
-//         Title: title,
-//         Price:  price,
-//         ImageURL: imageUrl,
-//         URL: url,
-//       })
-//
-//       writableStream.on("finish", () => {
-//         console.log("DONE!");
-//       });
-//
-//
-//     } else {
-//         console.log(`An error was encountered: ${error.message}`);
-//     }
-//   });
-// }
+    })
+  }
+
+
+
+Promise.all(actions).then(console.log('YAY'));
+
+
+
+//Promise.all(actions).then(console.log('DONE!'));
+
 
 // A Basic Promise Example / https://davidwalsh.name/promises
 //
