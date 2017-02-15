@@ -1,5 +1,13 @@
 'use strict';
 
+
+// 1) Try to accesss shirts4mike.com
+// 2) Prarse body of website for shirt URLs
+// 3) Promise that each shirt url will be retrieved and parsed into object
+// 4) Add shirt object/information to array of objects
+// 5) Write information to CSV file
+
+
 //Dependancies
 const cheerio = require('cheerio');
 const fastcsv = require('fast-csv');
@@ -33,7 +41,7 @@ let writableStream = fs.createWriteStream('./data/' + date + '.csv');
 csvStream.pipe(writableStream);
 
 
-
+//Promise that access is possible to shirts4mike website. Resolve if successsful.
 const getShirtURL = new Promise(function(resolve, reject) {
 
   //Checks to see if http://shirts4mike.com/shirts.php can be accessed
@@ -64,14 +72,24 @@ getShirtURL.then(function(body){
   console.log(urlArray);
   return urlArray;
 }).then(function(urlArray){
-  actions = urlArray.map(fn);
-});
 
+  const v = urlArray.map(fn)
+
+Promise.all(v).then(values => {
+  console.log('ALL Promises have been resolved! The shirt object array is: ');
+  console.log(infoToWrite);
+ });
+
+});
 
 //Add all shirt objects into this object array--to then write to file
 let infoToWrite = [];
 
-let fn = function scrapeShirtInformation(url){
+// let fn = function scrapeShirtInformation(url){
+//   return new Promise((resolve, reject) => {
+
+const fn =function scrapeShirtInformation(url){
+  let finish = false;
   return new Promise((resolve, reject) => {
       request(url, function (error, response, body) {
         if (!error) {
@@ -92,25 +110,18 @@ let fn = function scrapeShirtInformation(url){
 
           //push shirt info into infoToWrite array
           infoToWrite.push(shirtInfo);
-          console.log(infoToWrite);
+
+          //console.log(infoToWrite);
+
           resolve(shirtInfo);
         } else {
             reject(console.log('FAIL!'));
             console.log(`An error was encountered: ${error.message}`);
         }
       });
-
-
     })
   }
 
-
-
-Promise.all(actions).then(console.log('YAY'));
-
-
-
-//Promise.all(actions).then(console.log('DONE!'));
 
 
 // A Basic Promise Example / https://davidwalsh.name/promises
