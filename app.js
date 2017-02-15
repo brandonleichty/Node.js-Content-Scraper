@@ -45,7 +45,7 @@ csvStream.pipe(writableStream);
 const getShirtURL = new Promise(function(resolve, reject) {
 
   //Checks to see if http://shirts4mike.com/shirts.php can be accessed
-  request(allShirtURL, function (error, response, body) {
+  request(allShirtURL, (error, response, body) => {
     if (!error) {
       resolve(body);
       console.log('Successfully connected to http://shirts4mike.com/shirts.php');
@@ -61,7 +61,7 @@ let urlArray = [];
 
 let actions;
 
-getShirtURL.then(function(body){
+getShirtURL.then((body) => {
   const $ = cheerio.load(body);
 
   $('.products a').each(function(i, elem) {
@@ -71,13 +71,14 @@ getShirtURL.then(function(body){
   urlArray.join(', ');
   console.log(urlArray);
   return urlArray;
-}).then(function(urlArray){
+}).then((urlArray) => {
 
-  const v = urlArray.map(fn)
+  const v = urlArray.map(scrapeShirtInformation)
 
 Promise.all(v).then(values => {
   console.log('ALL Promises have been resolved! The shirt object array is: ');
   console.log(infoToWrite);
+  console.log(`There were ${infoToWrite.length} shirts scraped from shirts4mike.com`);
  });
 
 });
@@ -88,10 +89,9 @@ let infoToWrite = [];
 // let fn = function scrapeShirtInformation(url){
 //   return new Promise((resolve, reject) => {
 
-const fn =function scrapeShirtInformation(url){
-  let finish = false;
+const scrapeShirtInformation = (url) => {
   return new Promise((resolve, reject) => {
-      request(url, function (error, response, body) {
+      request(url, (error, response, body) => {
         if (!error) {
 
           const $ = cheerio.load(body);
@@ -111,9 +111,7 @@ const fn =function scrapeShirtInformation(url){
           //push shirt info into infoToWrite array
           infoToWrite.push(shirtInfo);
 
-          //console.log(infoToWrite);
-
-          resolve(shirtInfo);
+          resolve();
         } else {
             reject(console.log('FAIL!'));
             console.log(`An error was encountered: ${error.message}`);
@@ -121,25 +119,3 @@ const fn =function scrapeShirtInformation(url){
       });
     })
   }
-
-
-
-// A Basic Promise Example / https://davidwalsh.name/promises
-//
-// var p = new Promise(function(resolve, reject) {
-//
-// 	// Do an async task async task and then...
-//
-// 	if(/* good condition */) {
-// 		resolve('Success!');
-// 	}
-// 	else {
-// 		reject('Failure!');
-// 	}
-// });
-//
-// p.then(function() {
-// 	/* do something with the result */
-// }).catch(function() {
-// 	/* error :( */
-// })
