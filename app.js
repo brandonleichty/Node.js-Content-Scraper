@@ -10,11 +10,12 @@
 
 //Dependancies
 const cheerio = require('cheerio');
-const fastcsv = require('fast-csv');
 const request = require('request');
 const moment = require('moment');
 const fs = require('fs');
 const http = require('http');
+const csvWriter = require('csv-write-stream')
+
 
 
 //URLs for the website shirts4mike.com
@@ -23,6 +24,9 @@ const allShirtURL = 'http://shirts4mike.com/shirts.php';
 
 //Create new date with proper format using "moment" npm package
 const date = moment().format("YYYY-MM-DD");
+
+//Add all shirt objects into this object array--to then write to file
+const infoToWrite = [];
 
 try {
     fs.accessSync("./data");
@@ -34,11 +38,9 @@ try {
 
 }
 
-let csvStream = fastcsv.createWriteStream({headers: true})
-let writableStream = fs.createWriteStream('./data/' + date + '.csv');
+const writer = csvWriter();
 
-
-csvStream.pipe(writableStream);
+writer.pipe(fs.createWriteStream('./data/' + date + '.csv'));
 
 
 //Promise that access is possible to shirts4mike website. Resolve if successsful.
@@ -57,11 +59,10 @@ const getShirtURL = new Promise(function(resolve, reject) {
 });
 //END of getShirtURL Promise
 
-let urlArray = [];
-
-let actions;
 
 getShirtURL.then((body) => {
+  const urlArray = [];
+
   const $ = cheerio.load(body);
 
   $('.products a').each(function(i, elem) {
@@ -75,16 +76,19 @@ getShirtURL.then((body) => {
 
   const v = urlArray.map(scrapeShirtInformation)
 
-Promise.all(v).then(values => {
-  console.log('ALL Promises have been resolved! The shirt object array is: ');
-  console.log(infoToWrite);
-  console.log(`There were ${infoToWrite.length} shirts scraped from shirts4mike.com`);
- });
+  Promise.all(v).then(values => {
+    console.log('ALL Promises have been resolved! The shirt object array is: ');
+    console.log(infoToWrite);
+    console.log(`There were ${infoToWrite.length} shirts scraped from shirts4mike.com`);
+
+      for (let index = 0; index < infoToWrite.length; ++index) {
+        writer.write(infoToWrite[index]);
+      }
+    writer.end()
+   });
 
 });
 
-//Add all shirt objects into this object array--to then write to file
-let infoToWrite = [];
 
 // let fn = function scrapeShirtInformation(url){
 //   return new Promise((resolve, reject) => {
@@ -100,7 +104,7 @@ const scrapeShirtInformation = (url) => {
           let title = $(".shirt-details h1").text().substr(price.length + 1);
           let relativeImageUrl = $(".shirt-picture img").attr("src");
           let imageUrl = rootURL + relativeImageUrl;
-          console.log('Writing data for: ' + url);
+          console.log('Retrieve data for: ' + url);
 
           let shirtInfo = {};
           shirtInfo.price = price;
