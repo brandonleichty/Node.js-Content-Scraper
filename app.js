@@ -21,7 +21,7 @@ const os = require('os');
 
 //URLs for the website shirts4mike.com
 const rootURL = 'http://shirts4mike.com/'
-const allShirtURL = 'http://hirts4mike.com/shirts.php';
+const allShirtURL = 'http://shirts4mike.com/shirts.php';
 
 //Create new date with proper format using "moment" npm package
 const date = moment().format("YYYY-MM-DD");
