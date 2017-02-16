@@ -15,17 +15,18 @@ const moment = require('moment');
 const fs = require('fs');
 const http = require('http');
 const csvWriter = require('csv-write-stream')
+const os = require('os');
 
 
 
 //URLs for the website shirts4mike.com
 const rootURL = 'http://shirts4mike.com/'
-const allShirtURL = 'http://shirts4mike.com/shirts.php';
+const allShirtURL = 'http://hirts4mike.com/shirts.php';
 
 //Create new date with proper format using "moment" npm package
 const date = moment().format("YYYY-MM-DD");
 
-//Add all shirt objects into this object array--to then write to file
+//Add all shirt objects into this array--to later write to file
 const infoToWrite = [];
 
 try {
@@ -39,6 +40,8 @@ try {
 }
 
 const writer = csvWriter();
+const ErrorWriter = csvWriter();
+
 
 writer.pipe(fs.createWriteStream('./data/' + date + '.csv'));
 
@@ -70,7 +73,6 @@ getShirtURL.then((body) => {
   });
 
   urlArray.join(', ');
-  console.log(urlArray);
   return urlArray;
 }).then((urlArray) => {
 
@@ -84,9 +86,21 @@ getShirtURL.then((body) => {
       for (let index = 0; index < infoToWrite.length; ++index) {
         writer.write(infoToWrite[index]);
       }
-    writer.end()
+    writer.end();
    });
 
+}).catch(error => {
+
+  console.log('THERE WAS AN ERROR');
+
+  const errorDate = moment().format('ddd MMM Do YYYY h:mm:ss a');
+  const split = new Date().toString().split(" ");
+  const timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
+
+    fs.appendFile('./data/scrapper-error.log', `[${errorDate} ${timeZoneFormatted}] ${error} ${os.EOL}`, () => {
+      console.log(`There was an error: ${error}`);
+
+    });
 });
 
 
