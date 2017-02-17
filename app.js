@@ -67,7 +67,7 @@ const getShirtURL = new Promise(function(resolve, reject) {
 //END of getShirtURL Promise
 
 
-
+// Takes the body and targets each shirt URL--adding each scrapped URL to an array
 const scrapeBody = function(body) {
     const urlArray = [];
 
@@ -95,20 +95,6 @@ const getAndWriteShirtInfo = (urlArray) => {
             writer.write(infoToWrite[index]);
         }
         writer.end();
-    });
-}
-
-
-const catchError = (error) => {
-
-    const errorDate = moment().format('ddd MMM Do YYYY h:mm:ss a');
-    const split = new Date().toString().split(" ");
-    const timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
-
-    //Append error to scrapper-error.log file. If the file doesn't exist it'll be created.
-    fs.appendFile('./data/scrapper-error.log', `[${errorDate} ${timeZoneFormatted}] ${error} ${os.EOL}`, () => {
-        console.error(`There was an error: ${error.message}`);
-
     });
 }
 
@@ -143,6 +129,23 @@ const scrapeShirtInformation = (url) => {
         });
     })
 }
+
+
+
+
+const catchError = (error) => {
+
+    const errorDate = moment().format('ddd MMM Do YYYY h:mm:ss a');
+    const split = new Date().toString().split(" ");
+    const timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
+
+    //Append error to scrapper-error.log file. If the file doesn't exist it'll be created.
+    fs.appendFile('./data/scrapper-error.log', `[${errorDate} ${timeZoneFormatted}] ${error} ${os.EOL}`, () => {
+        console.error(`There was an error: ${error}`);
+
+    });
+}
+
 
 
 
