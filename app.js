@@ -1,20 +1,22 @@
 'use strict';
 
+// This project takes advantage of Promises in ES6.
+// Promise.all() is used to wait until each shirtURL is scrapped and resolved.
 
+// Process:
 // 1) Try to accesss shirts4mike.com
-// 2) Prarse body of website for shirt URLs
-// 3) Promise that each shirt url will be retrieved and parsed into object
-// 4) Add shirt object/information to array of objects
-// 5) Write information to CSV file
+// 2) Parse body of website--looking for t-shirt URLs
+// 3) Promise that each shirt url will be retrieved pushed into an arry of objects
+// 4) Write information from array to CSV file
+// 5) Log errors to scrapper-error.log
 
 
 //Dependancies
-const cheerio = require('cheerio');
+const csvWriter = require('csv-write-stream');
 const request = require('request');
+const cheerio = require('cheerio');
 const moment = require('moment');
 const fs = require('fs');
-const http = require('http');
-const csvWriter = require('csv-write-stream')
 const os = require('os');
 
 
@@ -23,25 +25,27 @@ const os = require('os');
 const rootURL = 'http://shirts4mike.com/'
 const allShirtURL = 'http://shirts4mike.com/shirts.php';
 
-//Create new date with proper format using "moment" npm package
+//Create new date with proper format using "moment" package
 const date = moment().format("YYYY-MM-DD");
 
 //Add all shirt objects into this array--to later write to file
 const infoToWrite = [];
 
+
+//Try to access the folder 'data.' If the folder doesn'exist, create it.
 try {
     fs.accessSync("./data");
-    console.log("This file already exist.");
+    console.log("The data folder already exist.");
 
 } catch (e) {
-    console.log("Data folder doesn't exists");
+    console.log("Creating data folder...");
     fs.mkdirSync("./data");
 
 }
 
+
 const writer = csvWriter();
 const ErrorWriter = csvWriter();
-
 
 writer.pipe(fs.createWriteStream('./data/' + date + '.csv'));
 
@@ -49,91 +53,88 @@ writer.pipe(fs.createWriteStream('./data/' + date + '.csv'));
 //Promise that access is possible to shirts4mike website. Resolve if successsful.
 const getShirtURL = new Promise(function(resolve, reject) {
 
-  //Checks to see if http://shirts4mike.com/shirts.php can be accessed
-  request(allShirtURL, (error, response, body) => {
-    if (!error) {
-      resolve(body);
-      console.log('Successfully connected to http://shirts4mike.com/shirts.php');
-    } else {
-      reject(error);
-      console.log('Could NOT connected to http://shirts4mike.com/shirts.php');
-    }
-  })
+    //Checks to see if http://shirts4mike.com/shirts.php can be accessed
+    request(allShirtURL, (error, response, body) => {
+        if (!error && response.statusCode == 200) {
+            console.log(`Status Code: ${response.statusCode} - OK`);
+            console.log(`Successfully connected to http://shirts4mike.com/shirts.php${os.EOL}`);
+            resolve(body);
+        } else {
+            //console.log(`There’s been a (${response.statusCode}) error. Cannot connect to the to http://shirts4mike.com.`);
+            reject(error);
+        }
+    })
 });
 //END of getShirtURL Promise
 
 
 getShirtURL.then((body) => {
-  const urlArray = [];
+    const urlArray = [];
 
-  const $ = cheerio.load(body);
+    const $ = cheerio.load(body);
 
-  $('.products a').each(function(i, elem) {
-    urlArray[i] = rootURL + $(this).attr('href');
-  });
+    $('.products a').each(function(i, elem) {
+        urlArray[i] = rootURL + $(this).attr('href');
+    });
 
-  urlArray.join(', ');
-  return urlArray;
+    urlArray.join(', ');
+    return urlArray;
 }).then((urlArray) => {
 
-  const v = urlArray.map(scrapeShirtInformation)
+    const v = urlArray.map(scrapeShirtInformation)
 
-  Promise.all(v).then(values => {
-    console.log('ALL Promises have been resolved! The shirt object array is: ');
-    console.log(infoToWrite);
-    console.log(`There were ${infoToWrite.length} shirts scraped from shirts4mike.com`);
+    Promise.all(v).then(values => {
+        console.log(`${os.EOL}ALL Promises have been resolved! The shirt object array is: ${os.EOL}`);
+        console.log(infoToWrite);
+        console.log(`${os.EOL}There were ${infoToWrite.length} shirts scraped from shirts4mike.com`);
 
-      for (let index = 0; index < infoToWrite.length; ++index) {
-        writer.write(infoToWrite[index]);
-      }
-    writer.end();
-   });
+        for (let index = 0; index < infoToWrite.length; ++index) {
+            writer.write(infoToWrite[index]);
+        }
+        writer.end();
+    });
 
 }).catch(error => {
 
-  console.log('THERE WAS AN ERROR');
+    const errorDate = moment().format('ddd MMM Do YYYY h:mm:ss a');
+    const split = new Date().toString().split(" ");
+    const timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
 
-  const errorDate = moment().format('ddd MMM Do YYYY h:mm:ss a');
-  const split = new Date().toString().split(" ");
-  const timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
-
+    //Append error to scrapper-error.log file. If the file doesn't exist it'll be created.
     fs.appendFile('./data/scrapper-error.log', `[${errorDate} ${timeZoneFormatted}] ${error} ${os.EOL}`, () => {
-      console.log(`There was an error: ${error}`);
+        console.error(`There was an error: ${error.message}`);
 
     });
 });
 
 
-// let fn = function scrapeShirtInformation(url){
-//   return new Promise((resolve, reject) => {
 
 const scrapeShirtInformation = (url) => {
-  return new Promise((resolve, reject) => {
-      request(url, (error, response, body) => {
-        if (!error) {
+    return new Promise((resolve, reject) => {
+        request(url, (error, response, body) => {
+            if (!error) {
 
-          const $ = cheerio.load(body);
+                const $ = cheerio.load(body);
 
-          let price = $('.price').text();
-          let title = $(".shirt-details h1").text().substr(price.length + 1);
-          let relativeImageUrl = $(".shirt-picture img").attr("src");
-          let imageUrl = rootURL + relativeImageUrl;
-          console.log('Retrieve data for: ' + url);
+                let price = $('.price').text();
+                let title = $(".shirt-details h1").text().substr(price.length + 1);
+                let relativeImageUrl = $(".shirt-picture img").attr("src");
+                let imageUrl = rootURL + relativeImageUrl;
+                console.log('Retrieve data for: ' + url);
 
-          let shirtInfo = {};
-          shirtInfo.price = price;
-          shirtInfo.title = title;
-          shirtInfo.relativeImageUrl = relativeImageUrl;
-          shirtInfo.imageUrl = imageUrl;
+                let shirtInfo = {};
+                shirtInfo.price = price;
+                shirtInfo.title = title;
+                shirtInfo.relativeImageUrl = relativeImageUrl;
+                shirtInfo.imageUrl = imageUrl;
 
-          //push shirt info into infoToWrite array
-          infoToWrite.push(shirtInfo);
+                //push shirt info into infoToWrite array
+                infoToWrite.push(shirtInfo);
 
-          resolve();
-        } else {
-            reject(console.log('FAIL!'));
-            console.log(`An error was encountered: ${error.message}`);
-        }
-      });
+                resolve();
+            } else {
+                reject(error);
+            }
+        });
     })
-  }
+}
