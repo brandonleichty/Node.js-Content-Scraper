@@ -52,7 +52,6 @@ writer.pipe(fs.createWriteStream('./data/' + date + '.csv'));
 
 //Promise that access is possible to shirts4mike website. Resolve if successsful.
 const getShirtURL = new Promise(function(resolve, reject) {
-
     //Checks to see if http://shirts4mike.com/shirts.php can be accessed
     request(allShirtURL, (error, response, body) => {
         if (!error && response.statusCode == 200) {
@@ -68,7 +67,8 @@ const getShirtURL = new Promise(function(resolve, reject) {
 //END of getShirtURL Promise
 
 
-getShirtURL.then((body) => {
+
+const scrapeBody = function(body) {
     const urlArray = [];
 
     const $ = cheerio.load(body);
@@ -76,10 +76,13 @@ getShirtURL.then((body) => {
     $('.products a').each(function(i, elem) {
         urlArray[i] = rootURL + $(this).attr('href');
     });
-
     urlArray.join(', ');
     return urlArray;
-}).then((urlArray) => {
+}
+
+
+
+const getAndWriteShirtInfo = (urlArray) => {
 
     const v = urlArray.map(scrapeShirtInformation)
 
@@ -93,8 +96,10 @@ getShirtURL.then((body) => {
         }
         writer.end();
     });
+}
 
-}).catch(error => {
+
+const catchError = (error) => {
 
     const errorDate = moment().format('ddd MMM Do YYYY h:mm:ss a');
     const split = new Date().toString().split(" ");
@@ -105,7 +110,7 @@ getShirtURL.then((body) => {
         console.error(`There was an error: ${error.message}`);
 
     });
-});
+}
 
 
 
@@ -138,3 +143,10 @@ const scrapeShirtInformation = (url) => {
         });
     })
 }
+
+
+
+getShirtURL
+    .then(scrapeBody)
+    .then(getAndWriteShirtInfo)
+    .catch(catchError);
