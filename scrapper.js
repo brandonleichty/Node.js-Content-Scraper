@@ -131,8 +131,6 @@ const scrapeShirtInformation = (url) => {
 }
 
 
-
-
 const catchError = (error) => {
 
     const errorDate = moment().format('ddd MMM Do YYYY h:mm:ss a');
@@ -145,8 +143,6 @@ const catchError = (error) => {
 
     });
 }
-
-
 
 
 getShirtURL
