@@ -6,7 +6,7 @@
 // Process:
 // 1) Try to accesss shirts4mike.com
 // 2) Parse body of website--looking for t-shirt URLs
-// 3) Promise that each shirt url will be retrieved pushed into an arry of objects
+// 3) Promise that each shirt url will be retrieved and then pushed into an arry of objects
 // 4) Write information from array to CSV file
 // 5) Log errors to scrapper-error.log
 
@@ -32,17 +32,6 @@ const date = moment().format("YYYY-MM-DD");
 const infoToWrite = [];
 
 
-//Try to access the folder 'data.' If the folder doesn'exist, create it.
-try {
-    fs.accessSync("./data");
-    console.log("The data folder already exist.");
-
-} catch (e) {
-    console.log("Creating data folder...");
-    fs.mkdirSync("./data");
-
-}
-
 
 const writer = csvWriter();
 const ErrorWriter = csvWriter();
@@ -52,12 +41,21 @@ writer.pipe(fs.createWriteStream('./data/' + date + '.csv'));
 
 //Promise that access is possible to shirts4mike website. Resolve if successsful.
 const getShirtURL = new Promise(function(resolve, reject) {
+
+// Check to see if the directory './data' exist. If not, create it.
+  if (!fs.existsSync('./data')) {
+        console.log("Creating data folder to store CSV file and log errors...");
+        fs.mkdirSync('./data');
+      }
+
     //Checks to see if http://shirts4mike.com/shirts.php can be accessed
     request(allShirtURL, (error, response, body) => {
         if (!error && response.statusCode == 200) {
+
             console.log(`Status Code: ${response.statusCode} - OK`);
             console.log(`Successfully connected to http://shirts4mike.com/shirts.php${os.EOL}`);
             resolve(body);
+
         } else {
             //console.log(`There’s been a (${response.statusCode}) error. Cannot connect to the to http://shirts4mike.com.`);
             reject(error);
@@ -81,7 +79,7 @@ const scrapeBody = function(body) {
 }
 
 
-
+// Waits until information is retrieved (using Promise.all) and then write the returned object to a file
 const getAndWriteShirtInfo = (urlArray) => {
 
     const v = urlArray.map(scrapeShirtInformation)
@@ -138,13 +136,13 @@ const catchError = (error) => {
     const timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
 
     //Append error to scrapper-error.log file. If the file doesn't exist it'll be created.
-    fs.appendFile('./data/scrapper-error.log', `[${errorDate} ${timeZoneFormatted}] ${error} ${os.EOL}`, () => {
-        console.error(`There was an error: ${error}`);
+    fs.appendFile('./data/scrapper-error.log', `[${errorDate} ${timeZoneFormatted}] ${error.message} ${os.EOL}`, () => {
+        console.error(`An error has occured while running scrapper.js.${os.EOL}See error information below (or check error log file): ${os.EOL}${error.message}`);
 
     });
 }
 
-
+//Run app (progresses through each Promise/function)
 getShirtURL
     .then(scrapeBody)
     .then(getAndWriteShirtInfo)
