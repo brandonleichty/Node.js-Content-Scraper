@@ -36,7 +36,7 @@ const infoToWrite = [];
 const writer = csvWriter();
 const ErrorWriter = csvWriter();
 
-writer.pipe(fs.createWriteStream('./data/' + date + '.csv'));
+
 
 
 //Promise that access is possible to shirts4mike website. Resolve if successsful.
@@ -46,6 +46,7 @@ const getShirtURL = new Promise(function(resolve, reject) {
   if (!fs.existsSync('./data')) {
         console.log("Creating data folder to store CSV file and log errors...");
         fs.mkdirSync('./data');
+        writer.pipe(fs.createWriteStream('./data/' + date + '.csv'));
       }
 
     //Checks to see if http://shirts4mike.com/shirts.php can be accessed
@@ -111,11 +112,14 @@ const scrapeShirtInformation = (url) => {
                 let imageUrl = rootURL + relativeImageUrl;
                 console.log('Retrieve data for: ' + url);
 
+                const scrapeTime = moment().format('ddd MMM Do YYYY h:mm:ss a');
+
                 let shirtInfo = {};
-                shirtInfo.price = price;
-                shirtInfo.title = title;
-                shirtInfo.relativeImageUrl = relativeImageUrl;
-                shirtInfo.imageUrl = imageUrl;
+                shirtInfo.Title = title;
+                shirtInfo.Price = price;
+                shirtInfo.ImageUrl = relativeImageUrl;
+                shirtInfo.Url = imageUrl;
+                shirtInfo.Time = scrapeTime;
 
                 //push shirt info into infoToWrite array
                 infoToWrite.push(shirtInfo);
